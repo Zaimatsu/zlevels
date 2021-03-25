@@ -1,31 +1,34 @@
 ﻿using UnityEngine;
 
-public class ZoetropeRotation : MonoBehaviour
+namespace Zoetropes
 {
-    [SerializeField] private float angle = 30.0f;
-    [SerializeField] private float timesPerSecond = 60f;
-
-    private float dt;
-    private float currentAngle;
-    private float currentTime;
-
-    private void Start()
+    public class ZoetropeRotation : MonoBehaviour
     {
-        dt = 1000.0f / timesPerSecond;
-    }
+        [SerializeField] private float angle = 30.0f;
+        [SerializeField] private float timesPerSecond = 60f;
 
-    private void Update()
-    {
-        // comment out after testing
-        dt = 1000.0f / timesPerSecond;
+        private float dt;
+        private float currentAngle;
+        private float currentTime;
 
-        currentTime += Time.deltaTime * 1000.0f;
-
-        while (currentTime >= dt)
+        private void Start()
         {
-            currentTime -= dt;
-            transform.rotation = Quaternion.Euler(0, currentAngle, 0);
-            currentAngle += angle;
+            dt = 1000.0f / timesPerSecond;
+        }
+
+        private void Update()
+        {
+            // comment out after testing
+            dt = 1000.0f / timesPerSecond;
+
+            currentTime += Time.deltaTime * 1000.0f;
+
+            while (currentTime >= dt)
+            {
+                currentTime -= dt;
+                transform.rotation = Quaternion.Euler(0, currentAngle, 0);
+                currentAngle += angle;
+            }
         }
     }
 }

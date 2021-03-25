@@ -1,0 +1,16 @@
+{
+    "name": "ZoetropesAssembly",
+    "rootNamespace": "ZLevels.Zoetropes",
+    "references": [
+        "GUID:50e0b422e522e494a816bb4d18028023"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
