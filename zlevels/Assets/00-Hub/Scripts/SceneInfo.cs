@@ -1,21 +1,21 @@
 ﻿using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace ZLevels.Hub
 {
     public class SceneInfo : MonoBehaviour, IPointerClickHandler
     {
+        public event OnRunButtonClicked RunButtonClicked;
+
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private Image screenshotImage;
         [SerializeField] private Button runButton;
         [SerializeField] private Camera mainCamera;
 
-        private SceneAsset selectedSceneToRun;
+        private SceneDataSO selectedSceneToRun;
 
         private void Start()
         {
@@ -37,7 +37,7 @@ namespace ZLevels.Hub
             titleText.text = sceneData.Name;
             descriptionText.text = sceneData.Description;
             screenshotImage.sprite = sceneData.Screenshot;
-            selectedSceneToRun = sceneData.Scene;
+            selectedSceneToRun = sceneData;
             runButton.interactable = true;
         }
 
@@ -50,6 +50,8 @@ namespace ZLevels.Hub
             Application.OpenURL(linkInfo.GetLinkID());
         }
 
-        private void RunButtonOnClick() => SceneManager.LoadScene(selectedSceneToRun.name);
+        private void RunButtonOnClick() => RunButtonClicked?.Invoke(this, selectedSceneToRun);
+
+        public delegate void OnRunButtonClicked(SceneInfo caller, SceneDataSO sceneData);
     }
 }

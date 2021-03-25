@@ -12,9 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cbc7dc14e0247e0aecb7afce927f1b9, type: 3}
   m_Name: SceneDataSO
   m_EditorClassIdentifier: 
-  <Name>k__BackingField: '01 - Zoetrope
-
-    and golden angle'
+  <Name>k__BackingField: 01 - Zoetrope and golden angle
   <Description>k__BackingField: 'Inspired by this <u><link=https://youtu.be/B5p2A5mazEs>video</link></u>.
 
     A

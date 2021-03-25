@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using ZLevels;
+using ZLevels.Utils;
 
 namespace Zoetropes
 {

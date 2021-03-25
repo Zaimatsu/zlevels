@@ -1,4 +1,4 @@
-﻿namespace ZLevels
+﻿namespace ZLevels.Utils
 {
     public static class MathUtils
     {
