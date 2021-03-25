@@ -1,5 +1,4 @@
 using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,7 +10,7 @@ namespace ZLevels
     {
         [SerializeField] private Button goBackButton;
         [SerializeField] private TMP_Text titleText;
-        [SerializeField] private SceneAsset hubScene;
+        [SerializeField] private SceneReference hubScene;
 
         private void Start()
         {
@@ -38,6 +37,6 @@ namespace ZLevels
             gameObject.SetActive(false);
         }
 
-        private void GoBackButtonOnClick() => SceneManager.LoadScene(hubScene.name);
+        private void GoBackButtonOnClick() => SceneManager.LoadScene(hubScene);
     }
 }

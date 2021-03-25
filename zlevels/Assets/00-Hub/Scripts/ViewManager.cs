@@ -1,5 +1,4 @@
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -31,7 +30,7 @@ namespace ZLevels.Hub
 
         private void SceneInfoOnRunButtonClicked(SceneInfo caller, SceneDataSO sceneData)
         {
-            SceneManager.LoadScene(sceneData.Scene.name);
+            SceneManager.LoadScene(sceneData.Scene);
             LevelStarted?.Invoke(this, sceneData);
         }
 

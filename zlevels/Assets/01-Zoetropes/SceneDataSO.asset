@@ -21,5 +21,7 @@ MonoBehaviour:
     phases of that motion.
 
 '
-  <Scene>k__BackingField: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+  <Scene>k__BackingField:
+    sceneAsset: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+    scenePath: Assets/01-Zoetropes/Scene/01-Zoetropes.unity
   <Screenshot>k__BackingField: {fileID: 21300000, guid: 2edc8db775539cf4285fdce309db6b4f, type: 3}

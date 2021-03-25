@@ -278,7 +278,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   goBackButton: {fileID: 403510063}
   titleText: {fileID: 722907096}
-  hubScene: {fileID: 102900000, guid: 4320fdc8f19cee542a6fda315c8d82e6, type: 3}
+  hubScene:
+    sceneAsset: {fileID: 102900000, guid: 4320fdc8f19cee542a6fda315c8d82e6, type: 3}
+    scenePath: Assets/00-Hub/Scene/Hub.unity
 --- !u!114 &667704025
 MonoBehaviour:
   m_ObjectHideFlags: 0
