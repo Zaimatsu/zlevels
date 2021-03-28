@@ -1,10 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cinemachine;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
+/// TODO
+/// 4. optional: blit texture and take into account live cells below?
+/// 5. refactor all this shit
+/// 6. UI:
+///     a) speed of sim value
+///     b) random threshold value
+///     c) generate button
+///     d) clear board button
+///     e) life pattern dropdown
+///     f) selected life preview that takes into account rotation
+///     g) rotate buttons
+///     h) info about controls (left mouse click to pan, mouse scroll to zoom, right mouse click to put life pattern, other key shortcuts) 
 namespace ZLevels.GameOfLife
 {
     public static class GameOfLifeExtensions
@@ -44,40 +58,37 @@ namespace ZLevels.GameOfLife
         private float maxOrthographicSize;
         private float orthographicSize;
 
+        [SerializeField] private Texture2D presetTexture;
+        [SerializeField] private Image previewImage;
+
         #region Presets
 
-        int[] gliderURPreset =
+        int[][] gliderPreset =
         {
-            0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0,
-            0, 0, 1, 1, 0,
-            0, 1, 1, 0, 0,
-            0, 0, 0, 0, 0
+            new[] {1, 0, 0},
+            new[] {0, 1, 1},
+            new[] {1, 1, 0}
         };
 
-        int[] hwssRPreset =
+        int[][] hwssPreset =
         {
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 1, 1, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0, 1, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 1, 0,
-            0, 1, 0, 0, 0, 0, 0, 1, 0,
-            0, 0, 1, 1, 1, 1, 1, 1, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            new[] {0, 0, 1, 1, 0, 0, 0},
+            new[] {1, 0, 0, 0, 0, 1, 0},
+            new[] {0, 0, 0, 0, 0, 0, 1},
+            new[] {1, 0, 0, 0, 0, 0, 1},
+            new[] {0, 1, 1, 1, 1, 1, 1}
         };
 
         #endregion
 
-        private List<int[]> presets;
+        private List<int[][]> presets;
         private int selectedPreset;
         [SerializeField] private PresetDirection presetDirection;
 
         private void Start()
         {
-            presets = new List<int[]>
-                {gliderURPreset, hwssRPreset};
+            presets = new List<int[][]>
+                {gliderPreset, hwssPreset};
 
             outputTexture.Release();
             outputTexture.width = (int) size.x;
@@ -108,6 +119,55 @@ namespace ZLevels.GameOfLife
             gameOfLifeComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
             gameOfLifeComputeShader.SetTexture(0, "Result", outputTexture);
             gameOfLifeComputeShader.SetTexture(0, "BufferTexture", bufferTexture);
+
+            presetTexture = PresetToTexture(presets[selectedPreset]);
+            previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
+        }
+
+        private Texture2D PresetToTexture(int[][] preset)
+        {
+            int xSize = preset.Length;
+            int ySize = preset.Select(ints => ints.Length).Prepend(Int32.MinValue).Max();
+
+            var texture = new Texture2D(ySize, xSize, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Point;
+
+            NativeArray<Color32> rawData = texture.GetRawTextureData<Color32>();
+            for (var index = 0; index < rawData.Length; index++)
+            {
+                Debug.Log($"{index}: {xSize - 1 - index / ySize}, {index % ySize}");
+                rawData[index] = preset[xSize - 1 - index / ySize][index % ySize] == 0
+                    ? Color.black
+                    : Color.white;
+            }
+
+            texture.Apply();
+
+            return texture;
+        }
+
+        Texture2D RotateTexture(Texture2D originalTexture, bool clockwise)
+        {
+            Color32[] original = originalTexture.GetPixels32();
+            var rotated = new Color32[original.Length];
+            int w = originalTexture.width;
+            int h = originalTexture.height;
+
+            int iRotated, iOriginal;
+
+            for (var j = 0; j < h; ++j)
+            for (var i = 0; i < w; ++i)
+            {
+                iRotated = (i + 1) * h - j - 1;
+                iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
+                rotated[iRotated] = original[iOriginal];
+            }
+
+            var rotatedTexture = new Texture2D(h, w);
+            rotatedTexture.filterMode = originalTexture.filterMode;
+            rotatedTexture.SetPixels32(rotated);
+            rotatedTexture.Apply();
+            return rotatedTexture;
         }
 
         private void GenerateRandomWorld()
@@ -153,11 +213,14 @@ namespace ZLevels.GameOfLife
             if (Input.GetKeyDown(KeyCode.W))
             {
                 selectedPreset = (selectedPreset + 1) % presets.Count;
+                presetTexture = PresetToTexture(presets[selectedPreset]);
+                previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
             }
 
             if (Input.GetKeyDown(KeyCode.E))
             {
-                presetDirection = presetDirection.Next();
+                presetTexture = RotateTexture(presetTexture, true);
+                previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
             }
 
             if (Input.GetKeyDown(KeyCode.Q))
@@ -167,15 +230,19 @@ namespace ZLevels.GameOfLife
                 var x = (int) textureMousePosition.x;
                 var y = (int) textureMousePosition.y;
 
-                int[] presetData = presets[selectedPreset];
-                int[] presetToSet = PresetToSet(presetData, presetDirection);
-                lifePresetsComputeShader.SetInts("Preset", presetToSet);
-                lifePresetsComputeShader.SetInts("PresetLength", presetData.Length);
-                //lifePresetsComputeShader.SetInt("PresetMask", presetMask);
-                lifePresetsComputeShader.SetInts("Position", x, y);
-                lifePresetsComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
-                lifePresetsComputeShader.SetTexture(0, "Result", outputTexture);
-                lifePresetsComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
+                Graphics.CopyTexture(presetTexture, 0, 0, 0, 0, presetTexture.width, presetTexture.height,
+                    outputTexture, 0, 0, x, y);
+                //Graphics.Blit(presetTexture, outputTexture, Vector2.one*2.0f, new Vector2(x, y));
+
+                // int[] presetData = presets[selectedPreset];
+                // int[] presetToSet = PresetToSet(presetData, presetDirection);
+                // lifePresetsComputeShader.SetInts("Preset", presetToSet);
+                // lifePresetsComputeShader.SetInts("PresetLength", presetData.Length);
+                // //lifePresetsComputeShader.SetInt("PresetMask", presetMask);
+                // lifePresetsComputeShader.SetInts("Position", x, y);
+                // lifePresetsComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
+                // lifePresetsComputeShader.SetTexture(0, "Result", outputTexture);
+                // lifePresetsComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
             }
 
             if (Input.GetMouseButton(0))
@@ -200,17 +267,17 @@ namespace ZLevels.GameOfLife
                     rotatedPresetData = presetData;
                     break;
                 case PresetDirection.Down:
-                    for (var x = 0; x < side; x++) 
+                    for (var x = 0; x < side; x++)
                     for (var y = 0; y < side; y++)
                         rotatedPresetData[x + y * side] = presetData[(side - x) * side - 1 - y];
                     break;
                 case PresetDirection.Left:
-                    for (var x = 0; x < side; x++) 
+                    for (var x = 0; x < side; x++)
                     for (var y = 0; y < side; y++)
                         rotatedPresetData[x + y * side] = presetData[side - 1 - x + y * side];
                     break;
                 case PresetDirection.Up:
-                    for (var x = 0; x < side; x++) 
+                    for (var x = 0; x < side; x++)
                     for (var y = 0; y < side; y++)
                         rotatedPresetData[x + y * side] = presetData[(side - x - 1) * side + y];
                     break;
