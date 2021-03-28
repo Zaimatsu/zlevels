@@ -1,0 +1,100 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+float2 Resolution;
+uint2 Position;
+uint PresetMask;
+
+uint Preset[10*10];
+uint PresetLength;
+
+static bool _glider_ur[25] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 1, 0,
+    0, 1, 1, 0, 0,
+    0, 0, 0, 0, 0
+};
+
+static bool _glider_ul[25] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 1, 0,
+    0, 1, 1, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0
+};
+
+static bool _glider_dl[25] = {
+    0, 0, 0, 0, 0,
+    0, 0, 1, 1, 0,
+    0, 1, 1, 0, 0,
+    0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0
+};
+
+static bool _glider_dr[25] = {
+    0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 1, 1, 0,
+    0, 1, 0, 1, 0,
+    0, 0, 0, 0, 0
+};
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint side = sqrt(PresetLength);
+    uint halfSide = (side - 1) / 2;
+
+    if (id.x >= Position.x - halfSide &&
+        id.x <= Position.x + halfSide &&
+        id.y >= Position.y - halfSide &&
+        id.y <= Position.y + halfSide)
+    {
+        uint2 offset = uint2(id.x - Position.x + halfSide, id.y - Position.y + halfSide);
+        bool isAlive = Preset[offset.x + offset.y * side] == 1;
+
+        if (isAlive)
+            Result[id.xy] = float4(1, 1, 1, 1);
+        else
+            Result[id.xy] = float4(0, 0, 0, 1);
+    }
+
+    return;
+
+
+    if (id.x >= Position.x - 2 &&
+        id.x <= Position.x + 2 &&
+        id.y >= Position.y - 2 &&
+        id.y <= Position.y + 2)
+    {
+        bool preset[25];
+
+        switch (PresetMask)
+        {
+        case 0:
+            preset = _glider_ur;
+            break;
+        case 1:
+            preset = _glider_dr;
+            break;
+        case 2:
+            preset = _glider_dl;
+            break;
+        case 3:
+            preset = _glider_ul;
+            break;
+        default:
+            preset = _glider_ur;
+            break;
+        }
+
+        uint2 offset = uint2(id.x - Position.x + 2, id.y - Position.y + 2);
+        bool isAlive = preset[offset.x + offset.y * 5];
+
+        if (isAlive)
+            Result[id.xy] = float4(1, 1, 1, 1);
+        else
+            Result[id.xy] = float4(0, 0, 0, 1);
+    }
+}
