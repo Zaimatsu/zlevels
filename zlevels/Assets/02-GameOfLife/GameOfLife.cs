@@ -1,11 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cinemachine;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using Random = UnityEngine.Random;
 
 /// TODO
 /// 4. optional: blit texture and take into account live cells below?
@@ -41,12 +37,85 @@ namespace ZLevels.GameOfLife
 
         private float maxOrthographicSize;
         private float orthographicSize;
-
-        [SerializeField] private Texture2D presetTexture;
+        
         [SerializeField] private Image previewImage;
 
         #region Presets
 
+        private string gliderPattern = @"!Name: Glider
+!Author: Richard K. Guy
+!The smallest, most common, and first discovered spaceship.
+!www.conwaylife.com/wiki/index.php?title=Glider
+.O
+..O
+OOO";
+
+        private string newGunPattern = @"! newgun.cells
+! Bill Gosper, 1971
+! http://conwaylife.com/wiki/New_gun_1
+! http://www.conwaylife.com/patterns/newgun.cells
+.........................OO.....OO..
+.........................OO.....OO..
+....................................
+....................................
+....................................
+....................................
+....................................
+....................................
+....................................
+..........................O.....O...
+.........................OOO...OOO..
+........................OO.O...O.OO.
+....................................
+....................................
+...........................O...O....
+...........................O...O....
+....................................
+....................................
+....................................
+....................................
+....................................
+....................................
+.................................O..
+..........OO......................OO
+OO.......O.O.....................OO.
+OO.......O..........................
+.........OOO........................
+....................................
+....................................
+....................................
+.........OOO........................
+OO.......O.................OO.......
+OO.......O.O...............OO.......
+..........OO........................";
+
+        private string gosperGliderGunPattern = @"!Name: Gosper glider gun
+!Author: Bill Gosper
+!The first known gun and the first known finite pattern with unbounded growth.
+!www.conwaylife.com/wiki/index.php?title=Gosper_glider_gun
+........................O
+......................O.O
+............OO......OO............OO
+...........O...O....OO............OO
+OO........O.....O...OO
+OO........O...O.OO....O.O
+..........O.....O.......O
+...........O...O
+............OO";
+
+        private string coeShipPattern = @"!Name: Coe ship
+!Author: Tim Coe
+!A puffer engine discovered in October 1995.
+....OOOOOO
+..OO.....O
+OO.O.....O
+....O...O
+......O
+......OO
+.....OOOO
+.....OO.OO
+.......OO";
+        
         int[][] gliderPreset =
         {
             new[] {1, 0, 0},
@@ -63,15 +132,31 @@ namespace ZLevels.GameOfLife
             new[] {0, 1, 1, 1, 1, 1, 1}
         };
 
+        private ListWalker<GoLPattern> listWalker;
+        private GoLPattern selectedPreset;
+        private GoLPatternTexture selectedPresetTexture;
+
         #endregion
 
-        private List<int[][]> presets;
-        private int selectedPreset;
+        //private List<int[][]> presets;
+        //private int selectedPreset;
 
         private void Start()
         {
-            presets = new List<int[][]>
-                {gliderPreset, hwssPreset};
+            var patternCellsFactory = new GoLPatternCellsFiletypeFactory();
+            var patternsManager = new GoLPatternsManager(new List<GoLPattern>()
+            {
+                patternCellsFactory.Create(gliderPattern),
+                patternCellsFactory.Create(newGunPattern),
+                patternCellsFactory.Create(gosperGliderGunPattern),
+                patternCellsFactory.Create(coeShipPattern)
+            });
+            listWalker = new ListWalker<GoLPattern>(patternsManager.Patterns);
+            selectedPreset = listWalker.Current;
+            selectedPresetTexture = new GoLPatternTexture(selectedPreset);
+
+            //presets = new List<int[][]>
+            //    {gliderPreset, hwssPreset};
 
             outputTexture.Release();
             outputTexture.width = (int) size.x;
@@ -103,54 +188,8 @@ namespace ZLevels.GameOfLife
             gameOfLifeComputeShader.SetTexture(0, "Result", outputTexture);
             gameOfLifeComputeShader.SetTexture(0, "BufferTexture", bufferTexture);
 
-            presetTexture = PresetToTexture(presets[selectedPreset]);
-            previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
-        }
-
-        private Texture2D PresetToTexture(int[][] preset)
-        {
-            int xSize = preset.Length;
-            int ySize = preset.Select(ints => ints.Length).Prepend(Int32.MinValue).Max();
-
-            var texture = new Texture2D(ySize, xSize, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Point;
-
-            NativeArray<Color32> rawData = texture.GetRawTextureData<Color32>();
-            for (var index = 0; index < rawData.Length; index++)
-            {
-                Debug.Log($"{index}: {xSize - 1 - index / ySize}, {index % ySize}");
-                rawData[index] = preset[xSize - 1 - index / ySize][index % ySize] == 0
-                    ? Color.black
-                    : Color.white;
-            }
-
-            texture.Apply();
-
-            return texture;
-        }
-
-        Texture2D RotateTexture(Texture2D originalTexture, bool clockwise)
-        {
-            Color32[] original = originalTexture.GetPixels32();
-            var rotated = new Color32[original.Length];
-            int w = originalTexture.width;
-            int h = originalTexture.height;
-
-            int iRotated, iOriginal;
-
-            for (var j = 0; j < h; ++j)
-            for (var i = 0; i < w; ++i)
-            {
-                iRotated = (i + 1) * h - j - 1;
-                iOriginal = clockwise ? original.Length - 1 - (j * w + i) : j * w + i;
-                rotated[iRotated] = original[iOriginal];
-            }
-
-            var rotatedTexture = new Texture2D(h, w);
-            rotatedTexture.filterMode = originalTexture.filterMode;
-            rotatedTexture.SetPixels32(rotated);
-            rotatedTexture.Apply();
-            return rotatedTexture;
+            previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
+                new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height), new Vector2(0.5f, 0.5f));
         }
 
         private void GenerateRandomWorld()
@@ -195,15 +234,19 @@ namespace ZLevels.GameOfLife
 
             if (Input.GetKeyDown(KeyCode.W))
             {
-                selectedPreset = (selectedPreset + 1) % presets.Count;
-                presetTexture = PresetToTexture(presets[selectedPreset]);
-                previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
+                selectedPreset = listWalker.Next();
+                selectedPresetTexture = new GoLPatternTexture(selectedPreset);
+                previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
+                    new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
+                    new Vector2(0.5f, 0.5f));
             }
 
             if (Input.GetKeyDown(KeyCode.E))
             {
-                presetTexture = RotateTexture(presetTexture, true);
-                previewImage.sprite = Sprite.Create(presetTexture, new Rect(0,0, presetTexture.width, presetTexture.height), new Vector2(0.5f, 0.5f));
+                selectedPresetTexture.Rotate();
+                previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
+                    new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
+                    new Vector2(0.5f, 0.5f));
             }
 
             if (Input.GetKeyDown(KeyCode.Q))
@@ -213,7 +256,7 @@ namespace ZLevels.GameOfLife
                 var x = (int) textureMousePosition.x;
                 var y = (int) textureMousePosition.y;
 
-                Graphics.CopyTexture(presetTexture, 0, 0, 0, 0, presetTexture.width, presetTexture.height,
+                Graphics.CopyTexture(selectedPresetTexture.Texture, 0, 0, 0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height,
                     outputTexture, 0, 0, x, y);
             }
 
