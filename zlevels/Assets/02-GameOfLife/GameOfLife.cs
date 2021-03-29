@@ -25,7 +25,6 @@ namespace ZLevels.GameOfLife
     {
         [SerializeField] private ComputeShader gameOfLifeComputeShader;
         [SerializeField] private ComputeShader randomWorldComputeShader;
-        [SerializeField] private ComputeShader lifePresetsComputeShader;
         [SerializeField] private RenderTexture outputTexture;
         [SerializeField] private RenderTexture bufferTexture;
         [SerializeField] private Vector2 size = new Vector2(1920, 1080);
