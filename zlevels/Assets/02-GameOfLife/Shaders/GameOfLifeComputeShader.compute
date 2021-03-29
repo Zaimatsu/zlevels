@@ -1,0 +1,60 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> BufferTexture;
+RWTexture2D<float4> Result;
+float2 Resolution;
+
+bool is_alive(uint2 pos);
+int calculate_neighbors(uint3 id);
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x / Resolution.x;
+    float y = id.y / Resolution.y;
+
+    int neighborsCount = calculate_neighbors(id);
+
+    float4 result = Result[id.xy];
+
+    bool isAlive = is_alive(id.xy);
+
+    if (isAlive && (neighborsCount == 2 || neighborsCount == 3))
+        result = float4(1, 1, 1, 1);
+    else if (isAlive && (neighborsCount >= 4 || neighborsCount == 0 || neighborsCount == 1))
+        result = float4(0, 0, 0, 1);
+    else if (!isAlive && neighborsCount == 3)
+        result = float4(1, 1, 1, 1);
+
+    BufferTexture[id.xy] = result;
+}
+
+int calculate_neighbors(uint3 id)
+{
+    int neighborsCount = 0;
+
+    if (id.x - 1 > 0 && is_alive(uint2(id.x - 1, id.y)))
+        neighborsCount++;
+    if (id.x + 1 < Resolution.x && is_alive(uint2(id.x + 1, id.y)))
+        neighborsCount++;
+    if (id.y - 1 > 0 && is_alive(uint2(id.x, id.y - 1)))
+        neighborsCount++;
+    if (id.y + 1 < Resolution.y && is_alive(uint2(id.x, id.y + 1)))
+        neighborsCount++;
+
+    if (id.x - 1 > 0 && id.y - 1 > 0 && is_alive(uint2(id.x - 1, id.y - 1)))
+        neighborsCount++;
+    if (id.x + 1 < Resolution.x && id.y - 1 > 0 && is_alive(uint2(id.x + 1, id.y - 1)))
+        neighborsCount++;
+    if (id.x - 1 > 0 && id.y + 1 < Resolution.y && is_alive(uint2(id.x - 1, id.y + 1)))
+        neighborsCount++;
+    if (id.x + 1 < Resolution.x && id.y + 1 < Resolution.y && is_alive(uint2(id.x + 1, id.y + 1)))
+        neighborsCount++;
+
+    return neighborsCount;
+}
+
+bool is_alive(uint2 pos)
+{
+    return all(Result[pos].xyz == float3(1, 1, 1));
+}
