@@ -1,6 +1,7 @@
 using Cinemachine;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLevels.Utils;
 
 /// TODO
 /// 4. optional: blit texture and take into account live cells below?
@@ -33,6 +34,7 @@ namespace ZLevels.GameOfLife
         [SerializeField] private float threshold = 0.5f;
         [SerializeField] private int seed;
         [SerializeField] private bool simulate;
+        [SerializeField] private float timesPerSecond = 60.0f;
 
         private float maxOrthographicSize;
         private float orthographicSize;
@@ -40,15 +42,16 @@ namespace ZLevels.GameOfLife
         [SerializeField] private Image previewImage;
 
         private ListWalker<GoLPattern> listWalker;
-        private GoLPattern selectedPreset;
         private GoLPatternTexture selectedPresetTexture;
+        private Timer.TimesPerSecondTimer perSecondTimer;
 
         private void Start()
         {
+            perSecondTimer = Timer.TimesPerSecond(timesPerSecond);
+            perSecondTimer.Hit += UpdateSim;
             var patternsManager = new GoLPatternsManager(new GoLPatternsResourcesLoader().Load());
             listWalker = new ListWalker<GoLPattern>(patternsManager.Patterns);
-            selectedPreset = listWalker.Current;
-            selectedPresetTexture = new GoLPatternTexture(selectedPreset);
+            SetSelectedPatternTexture(new GoLPatternTexture(listWalker.Current));
 
             outputTexture.Release();
             outputTexture.width = (int) size.x;
@@ -79,24 +82,11 @@ namespace ZLevels.GameOfLife
             gameOfLifeComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
             gameOfLifeComputeShader.SetTexture(0, "Result", outputTexture);
             gameOfLifeComputeShader.SetTexture(0, "BufferTexture", bufferTexture);
-
-            previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
-                new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
-                new Vector2(0.5f, 0.5f));
         }
 
-        private void GenerateRandomWorld()
+        private void UpdateSim(Timer.TimesPerSecondTimer caller)
         {
-            RenderTexture currentActiveRT = RenderTexture.active;
-            RenderTexture.active = outputTexture;
-            var buf = new Texture2D((int) size.x, (int) size.y);
-            buf.ReadPixels(new Rect(0, 0, (int) size.x, (int) size.y), 0, 0);
-            for (var x = 0; x < buf.width; x++)
-            for (var y = 0; y < buf.height; y++)
-                buf.SetPixel(x, y, Random.value > 0.15f ? Color.black : Color.white);
-            buf.Apply();
-            Graphics.Blit(buf, outputTexture);
-            RenderTexture.active = currentActiveRT;
+            Dispatch();
         }
 
         private void GenerateRandomWorldGPU(int seed)
@@ -117,32 +107,28 @@ namespace ZLevels.GameOfLife
 
         private void Update()
         {
+            perSecondTimer.TimesPerSecond = timesPerSecond;
+            
             if (simulate)
-                Dispatch();
+                perSecondTimer.Tick();
 
             if (Input.GetKeyDown(KeyCode.R))
             {
                 GenerateRandomWorldGPU(seed);
             }
 
-            if (Input.GetKeyDown(KeyCode.W))
+            if (Input.GetKeyDown(KeyCode.N))
             {
-                selectedPreset = listWalker.Next();
-                selectedPresetTexture = new GoLPatternTexture(selectedPreset);
-                previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
-                    new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
-                    new Vector2(0.5f, 0.5f));
+                SetSelectedPatternTexture(new GoLPatternTexture(listWalker.Next()));
             }
 
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetMouseButtonDown(2))
             {
                 selectedPresetTexture.Rotate();
-                previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
-                    new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
-                    new Vector2(0.5f, 0.5f));
+                SetSelectedPatternTexture(selectedPresetTexture);
             }
 
-            if (Input.GetKeyDown(KeyCode.Q))
+            if (Input.GetMouseButtonDown(1))
             {
                 Vector3 worldMousePosition = camera.ScreenToWorldPoint(Input.mousePosition);
                 Vector2 textureMousePosition = new Vector2(worldMousePosition.x, worldMousePosition.y) + size / 2.0f;
@@ -151,7 +137,7 @@ namespace ZLevels.GameOfLife
 
                 Graphics.CopyTexture(selectedPresetTexture.Texture, 0, 0, 0, 0, selectedPresetTexture.Texture.width,
                     selectedPresetTexture.Texture.height,
-                    outputTexture, 0, 0, x, y);
+                    outputTexture, 0, 0, x - selectedPresetTexture.Texture.width/2, y - selectedPresetTexture.Texture.height/2);
             }
 
             if (Input.GetMouseButton(0))
@@ -163,6 +149,14 @@ namespace ZLevels.GameOfLife
             orthographicSize = Mathf.Clamp(orthographicSize - Input.mouseScrollDelta.y * Time.deltaTime * zoomSpeed, 10,
                 maxOrthographicSize);
             virtualCamera.m_Lens.OrthographicSize = orthographicSize;
+        }
+
+        private void SetSelectedPatternTexture(GoLPatternTexture goLPatternTexture)
+        {
+            selectedPresetTexture = goLPatternTexture;
+            previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
+                new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
+                new Vector2(0.5f, 0.5f));
         }
     }
 }
