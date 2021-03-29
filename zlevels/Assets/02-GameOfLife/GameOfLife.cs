@@ -21,21 +21,6 @@ using Random = UnityEngine.Random;
 ///     h) info about controls (left mouse click to pan, mouse scroll to zoom, right mouse click to put life pattern, other key shortcuts) 
 namespace ZLevels.GameOfLife
 {
-    public static class GameOfLifeExtensions
-    {
-        public static GameOfLife.PresetDirection Next(this GameOfLife.PresetDirection presetDirection)
-        {
-            return presetDirection switch
-            {
-                GameOfLife.PresetDirection.Right => GameOfLife.PresetDirection.Down,
-                GameOfLife.PresetDirection.Down => GameOfLife.PresetDirection.Left,
-                GameOfLife.PresetDirection.Left => GameOfLife.PresetDirection.Up,
-                GameOfLife.PresetDirection.Up => GameOfLife.PresetDirection.Right,
-                _ => throw new ArgumentOutOfRangeException(nameof(presetDirection), presetDirection, null)
-            };
-        }
-    }
-
     public class GameOfLife : MonoBehaviour
     {
         [SerializeField] private ComputeShader gameOfLifeComputeShader;
@@ -83,7 +68,6 @@ namespace ZLevels.GameOfLife
 
         private List<int[][]> presets;
         private int selectedPreset;
-        [SerializeField] private PresetDirection presetDirection;
 
         private void Start()
         {
@@ -232,17 +216,6 @@ namespace ZLevels.GameOfLife
 
                 Graphics.CopyTexture(presetTexture, 0, 0, 0, 0, presetTexture.width, presetTexture.height,
                     outputTexture, 0, 0, x, y);
-                //Graphics.Blit(presetTexture, outputTexture, Vector2.one*2.0f, new Vector2(x, y));
-
-                // int[] presetData = presets[selectedPreset];
-                // int[] presetToSet = PresetToSet(presetData, presetDirection);
-                // lifePresetsComputeShader.SetInts("Preset", presetToSet);
-                // lifePresetsComputeShader.SetInts("PresetLength", presetData.Length);
-                // //lifePresetsComputeShader.SetInt("PresetMask", presetMask);
-                // lifePresetsComputeShader.SetInts("Position", x, y);
-                // lifePresetsComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
-                // lifePresetsComputeShader.SetTexture(0, "Result", outputTexture);
-                // lifePresetsComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
             }
 
             if (Input.GetMouseButton(0))
@@ -254,52 +227,6 @@ namespace ZLevels.GameOfLife
             orthographicSize = Mathf.Clamp(orthographicSize - Input.mouseScrollDelta.y * Time.deltaTime * zoomSpeed, 10,
                 maxOrthographicSize);
             virtualCamera.m_Lens.OrthographicSize = orthographicSize;
-        }
-
-        private static int[] PresetToSet(int[] presetData, PresetDirection presetDirection)
-        {
-            var rotatedPresetData = new int[presetData.Length];
-
-            int side = (int) Mathf.Sqrt(presetData.Length);
-            switch (presetDirection)
-            {
-                case PresetDirection.Right:
-                    rotatedPresetData = presetData;
-                    break;
-                case PresetDirection.Down:
-                    for (var x = 0; x < side; x++)
-                    for (var y = 0; y < side; y++)
-                        rotatedPresetData[x + y * side] = presetData[(side - x) * side - 1 - y];
-                    break;
-                case PresetDirection.Left:
-                    for (var x = 0; x < side; x++)
-                    for (var y = 0; y < side; y++)
-                        rotatedPresetData[x + y * side] = presetData[side - 1 - x + y * side];
-                    break;
-                case PresetDirection.Up:
-                    for (var x = 0; x < side; x++)
-                    for (var y = 0; y < side; y++)
-                        rotatedPresetData[x + y * side] = presetData[(side - x - 1) * side + y];
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(presetDirection), presetDirection, null);
-            }
-
-            var presetToSet = new int[4 * rotatedPresetData.Length];
-            for (var i = 0; i < rotatedPresetData.Length; i++)
-            {
-                presetToSet[i * 4] = rotatedPresetData[i];
-            }
-
-            return presetToSet;
-        }
-
-        public enum PresetDirection
-        {
-            Right,
-            Down,
-            Left,
-            Up
         }
     }
 }
