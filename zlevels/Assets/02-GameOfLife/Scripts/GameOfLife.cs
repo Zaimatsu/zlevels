@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Cinemachine;
 using UnityEngine;
 using UnityEngine.UI;
@@ -37,126 +36,19 @@ namespace ZLevels.GameOfLife
 
         private float maxOrthographicSize;
         private float orthographicSize;
-        
+
         [SerializeField] private Image previewImage;
-
-        #region Presets
-
-        private string gliderPattern = @"!Name: Glider
-!Author: Richard K. Guy
-!The smallest, most common, and first discovered spaceship.
-!www.conwaylife.com/wiki/index.php?title=Glider
-.O
-..O
-OOO";
-
-        private string newGunPattern = @"! newgun.cells
-! Bill Gosper, 1971
-! http://conwaylife.com/wiki/New_gun_1
-! http://www.conwaylife.com/patterns/newgun.cells
-.........................OO.....OO..
-.........................OO.....OO..
-....................................
-....................................
-....................................
-....................................
-....................................
-....................................
-....................................
-..........................O.....O...
-.........................OOO...OOO..
-........................OO.O...O.OO.
-....................................
-....................................
-...........................O...O....
-...........................O...O....
-....................................
-....................................
-....................................
-....................................
-....................................
-....................................
-.................................O..
-..........OO......................OO
-OO.......O.O.....................OO.
-OO.......O..........................
-.........OOO........................
-....................................
-....................................
-....................................
-.........OOO........................
-OO.......O.................OO.......
-OO.......O.O...............OO.......
-..........OO........................";
-
-        private string gosperGliderGunPattern = @"!Name: Gosper glider gun
-!Author: Bill Gosper
-!The first known gun and the first known finite pattern with unbounded growth.
-!www.conwaylife.com/wiki/index.php?title=Gosper_glider_gun
-........................O
-......................O.O
-............OO......OO............OO
-...........O...O....OO............OO
-OO........O.....O...OO
-OO........O...O.OO....O.O
-..........O.....O.......O
-...........O...O
-............OO";
-
-        private string coeShipPattern = @"!Name: Coe ship
-!Author: Tim Coe
-!A puffer engine discovered in October 1995.
-....OOOOOO
-..OO.....O
-OO.O.....O
-....O...O
-......O
-......OO
-.....OOOO
-.....OO.OO
-.......OO";
-        
-        int[][] gliderPreset =
-        {
-            new[] {1, 0, 0},
-            new[] {0, 1, 1},
-            new[] {1, 1, 0}
-        };
-
-        int[][] hwssPreset =
-        {
-            new[] {0, 0, 1, 1, 0, 0, 0},
-            new[] {1, 0, 0, 0, 0, 1, 0},
-            new[] {0, 0, 0, 0, 0, 0, 1},
-            new[] {1, 0, 0, 0, 0, 0, 1},
-            new[] {0, 1, 1, 1, 1, 1, 1}
-        };
 
         private ListWalker<GoLPattern> listWalker;
         private GoLPattern selectedPreset;
         private GoLPatternTexture selectedPresetTexture;
 
-        #endregion
-
-        //private List<int[][]> presets;
-        //private int selectedPreset;
-
         private void Start()
         {
-            var patternCellsFactory = new GoLPatternCellsFiletypeFactory();
-            var patternsManager = new GoLPatternsManager(new List<GoLPattern>()
-            {
-                patternCellsFactory.Create(gliderPattern),
-                patternCellsFactory.Create(newGunPattern),
-                patternCellsFactory.Create(gosperGliderGunPattern),
-                patternCellsFactory.Create(coeShipPattern)
-            });
+            var patternsManager = new GoLPatternsManager(new GoLPatternsResourcesLoader().Load());
             listWalker = new ListWalker<GoLPattern>(patternsManager.Patterns);
             selectedPreset = listWalker.Current;
             selectedPresetTexture = new GoLPatternTexture(selectedPreset);
-
-            //presets = new List<int[][]>
-            //    {gliderPreset, hwssPreset};
 
             outputTexture.Release();
             outputTexture.width = (int) size.x;
@@ -189,7 +81,8 @@ OO.O.....O
             gameOfLifeComputeShader.SetTexture(0, "BufferTexture", bufferTexture);
 
             previewImage.sprite = Sprite.Create(selectedPresetTexture.Texture,
-                new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height), new Vector2(0.5f, 0.5f));
+                new Rect(0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height),
+                new Vector2(0.5f, 0.5f));
         }
 
         private void GenerateRandomWorld()
@@ -256,7 +149,8 @@ OO.O.....O
                 var x = (int) textureMousePosition.x;
                 var y = (int) textureMousePosition.y;
 
-                Graphics.CopyTexture(selectedPresetTexture.Texture, 0, 0, 0, 0, selectedPresetTexture.Texture.width, selectedPresetTexture.Texture.height,
+                Graphics.CopyTexture(selectedPresetTexture.Texture, 0, 0, 0, 0, selectedPresetTexture.Texture.width,
+                    selectedPresetTexture.Texture.height,
                     outputTexture, 0, 0, x, y);
             }
 
