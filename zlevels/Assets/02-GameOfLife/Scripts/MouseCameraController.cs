@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace ZLevels.GameOfLife
 {
+    // potentially Utils
     public class MouseCameraController : MonoBehaviour
     {
         [SerializeField] private PolygonCollider2D polygonCollider2D;

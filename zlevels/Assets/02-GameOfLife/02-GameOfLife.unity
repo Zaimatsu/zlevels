@@ -1006,7 +1006,7 @@ MonoBehaviour:
   gameOfLifeComputeShader: {fileID: 7200000, guid: 213aede5d0ef2194e9a8c792b3de9bd7, type: 3}
   randomWorldComputeShader: {fileID: 7200000, guid: 7f64293ff46c4da3ab9868fda841f924, type: 3}
   size: {x: 3840, y: 2160}
-  rawImage: {fileID: 1244717043}
+  gameOfLifeRawImage: {fileID: 1244717043}
   mainCamera: {fileID: 1631726714}
   mouseCameraController: {fileID: 1631726718}
   threshold: 0.5

@@ -21,7 +21,7 @@ namespace ZLevels.GameOfLife
         [SerializeField] private ComputeShader gameOfLifeComputeShader;
         [SerializeField] private ComputeShader randomWorldComputeShader;
         [SerializeField] private Vector2 size = new Vector2(1920, 1080);
-        [SerializeField] private RawImage rawImage;
+        [SerializeField] private RawImage gameOfLifeRawImage;
         [SerializeField] private Camera mainCamera;
         [SerializeField] private MouseCameraController mouseCameraController;
 
@@ -57,8 +57,8 @@ namespace ZLevels.GameOfLife
             bufferTexture.filterMode = FilterMode.Point;
             bufferTexture.Create();
 
-            rawImage.texture = outputTexture;
-            rawImage.GetComponent<RectTransform>().sizeDelta = size;
+            gameOfLifeRawImage.texture = outputTexture;
+            gameOfLifeRawImage.GetComponent<RectTransform>().sizeDelta = size;
 
             mouseCameraController.Initialize(size);
             
