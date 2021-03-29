@@ -49,6 +49,7 @@ namespace ZLevels.GameOfLife
         {
             perSecondTimer = Timer.TimesPerSecond(timesPerSecond);
             perSecondTimer.Hit += UpdateSim;
+            
             var patternsManager = new GoLPatternsManager(new GoLPatternsResourcesLoader().Load());
             listWalker = new ListWalker<GoLPattern>(patternsManager.Patterns);
             SetSelectedPatternTexture(new GoLPatternTexture(listWalker.Current));

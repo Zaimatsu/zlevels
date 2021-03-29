@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ZLevels.GameOfLife
+namespace ZLevels.Utils
 {
     /// <summary>
     /// ToDo: check if referenced list is valid and if it is still valid
