@@ -9,7 +9,7 @@ namespace ZLevels.GameOfLife
     {
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            TextAsset subAsset = new TextAsset(File.ReadAllText(ctx.assetPath));
+            var subAsset = new TextAsset(File.ReadAllText(ctx.assetPath));
             ctx.AddObjectToAsset("text", subAsset);
             ctx.SetMainObject(subAsset);
         }
