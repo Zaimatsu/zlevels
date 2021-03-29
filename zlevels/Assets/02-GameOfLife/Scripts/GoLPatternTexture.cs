@@ -1,10 +1,13 @@
-﻿using Unity.Collections;
+﻿using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace ZLevels.GameOfLife
 {
     public class GoLPatternTexture
     {
+        public event Action<GoLPatternTexture> Changed;
+        
         public Texture2D Texture { get; private set; }
 
         public GoLPatternTexture(GoLPattern goLPattern)
@@ -28,6 +31,10 @@ namespace ZLevels.GameOfLife
             Texture.Apply();
         }
 
-        public void Rotate(bool clockwise = true) => Texture = Texture.Rotate(clockwise);
+        public void Rotate(bool clockwise = true)
+        {
+            Texture = Texture.Rotate(clockwise);
+            Changed?.Invoke(this);
+        }
     }
 }

@@ -9,20 +9,14 @@ namespace ZLevels.Utils
             public float TimesPerSecond
             {
                 get => timesPerSecond;
-                set
-                {
-                    timesPerSecond = Mathf.Abs(value);
-                    if (timesPerSecond != 0) return;
-                    Debug.LogWarning("TimesPerSecond cannot be 0. Setting to 1.");
-                    timesPerSecond = 1.0f;
-                }
+                set => timesPerSecond = Mathf.Abs(value);
             }
 
             private float dt;
             private float currentTime;
             private float timesPerSecond;
             public event OnHit Hit;
-            
+
             public TimesPerSecondTimer(float timesPerSecond)
             {
                 TimesPerSecond = timesPerSecond;
@@ -30,6 +24,7 @@ namespace ZLevels.Utils
 
             public void Tick()
             {
+                if (TimesPerSecond == 0) return;
                 dt = 1.0f / TimesPerSecond;
                 currentTime += Time.deltaTime;
 
@@ -42,7 +37,7 @@ namespace ZLevels.Utils
 
             public delegate void OnHit(TimesPerSecondTimer caller);
         }
-        
+
         public static TimesPerSecondTimer TimesPerSecond(float seconds) => new TimesPerSecondTimer(seconds);
     }
 }

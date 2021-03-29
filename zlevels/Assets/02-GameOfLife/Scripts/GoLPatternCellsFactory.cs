@@ -14,13 +14,11 @@ namespace ZLevels.GameOfLife
                 StringSplitOptions.None
             );
 
-            string name = lines[0];
-            string description = lines[1];
+            string name = lines[0].Split(':')[1].Trim();
+            string description = lines[1].Replace("!", "");
             var i = 2;
             while (lines[i].StartsWith("!"))
-            {
-                description += lines[i++];
-            }
+                description += Environment.NewLine + lines[i++].Replace("!", "");
 
             int xSize = lines.Skip(i).Max(line => line.Length);
             ushort ySize = 0;

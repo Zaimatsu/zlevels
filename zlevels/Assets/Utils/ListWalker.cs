@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ZLevels.Utils
 {
@@ -8,6 +9,8 @@ namespace ZLevels.Utils
     /// <typeparam name="T"></typeparam>
     public class ListWalker<T>
     {
+        public event Action<T> Changed;
+        
         public T Current => list[selected];
 
         private List<T> list;
@@ -18,12 +21,14 @@ namespace ZLevels.Utils
         public T Next()
         {
             selected = (selected + 1) % list.Count;
+            Changed?.Invoke(Current);
             return Current;
         }
 
         public T Previous()
         {
             if (--selected < 0) selected = list.Count - 1;
+            Changed?.Invoke(Current);
             return Current;
         }
     }

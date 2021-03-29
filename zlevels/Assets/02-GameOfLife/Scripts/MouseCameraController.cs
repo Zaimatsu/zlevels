@@ -1,5 +1,8 @@
-﻿using Cinemachine;
+﻿using System.Collections.Generic;
+using Cinemachine;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace ZLevels.GameOfLife
 {
@@ -10,6 +13,8 @@ namespace ZLevels.GameOfLife
         [SerializeField] private CinemachineVirtualCamera virtualCamera;
         [SerializeField] private Camera mainCamera;
         [SerializeField] private float zoomSpeed = 500.0f;
+        [SerializeField] private LayerMask boardMask;
+        [SerializeField] private EventSystem eventSystem;
 
         private Transform cameraFollowTarget;
         private float maxOrthographicSize;
@@ -46,8 +51,15 @@ namespace ZLevels.GameOfLife
         {
             if (Input.GetMouseButton(0))
             {
-                Vector3 worldMousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-                cameraFollowTarget.position = new Vector3(worldMousePosition.x, worldMousePosition.y, 0);
+                var m_PointerEventData = new PointerEventData(eventSystem);
+                m_PointerEventData.position = Input.mousePosition;
+                List<RaycastResult> results = new List<RaycastResult>();
+                EventSystem.current.RaycastAll(m_PointerEventData, results);
+                if (results.Count == 1)
+                {
+                    RaycastResult hitInfo = results[0];
+                    cameraFollowTarget.position = new Vector3(hitInfo.worldPosition.x, hitInfo.worldPosition.y, 0);
+                }
             }
 
             orthographicSize = Mathf.Clamp(orthographicSize - Input.mouseScrollDelta.y * Time.deltaTime * zoomSpeed, 10,
