@@ -1,4 +1,3 @@
-using Cinemachine;
 using UnityEngine;
 using UnityEngine.UI;
 using ZLevels.Utils;
@@ -21,63 +20,48 @@ namespace ZLevels.GameOfLife
     {
         [SerializeField] private ComputeShader gameOfLifeComputeShader;
         [SerializeField] private ComputeShader randomWorldComputeShader;
-        [SerializeField] private RenderTexture outputTexture;
-        [SerializeField] private RenderTexture bufferTexture;
         [SerializeField] private Vector2 size = new Vector2(1920, 1080);
         [SerializeField] private RawImage rawImage;
-        [SerializeField] private PolygonCollider2D polygonCollider2D;
-        [SerializeField] private CinemachineConfiner cinemachineConfiner;
-        [SerializeField] private CinemachineVirtualCamera virtualCamera;
-        [SerializeField] private Camera camera;
-        [SerializeField] private Transform cameraFollowTarget;
-        [SerializeField] private float zoomSpeed = 500.0f;
+        [SerializeField] private Camera mainCamera;
+        [SerializeField] private MouseCameraController mouseCameraController;
+
         [SerializeField] private float threshold = 0.5f;
         [SerializeField] private int seed;
         [SerializeField] private bool simulate;
         [SerializeField] private float timesPerSecond = 60.0f;
-
-        private float maxOrthographicSize;
-        private float orthographicSize;
 
         [SerializeField] private Image previewImage;
 
         private ListWalker<GoLPattern> listWalker;
         private GoLPatternTexture selectedPresetTexture;
         private Timer.TimesPerSecondTimer perSecondTimer;
+        private RenderTexture outputTexture;
+        private RenderTexture bufferTexture;
 
         private void Start()
         {
             perSecondTimer = Timer.TimesPerSecond(timesPerSecond);
             perSecondTimer.Hit += UpdateSim;
-            
+
             var patternsManager = new GoLPatternsManager(new GoLPatternsResourcesLoader().Load());
             listWalker = new ListWalker<GoLPattern>(patternsManager.Patterns);
             SetSelectedPatternTexture(new GoLPatternTexture(listWalker.Current));
 
-            outputTexture.Release();
-            outputTexture.width = (int) size.x;
-            outputTexture.height = (int) size.y;
+            outputTexture = new RenderTexture((int) size.x, (int) size.y, 24);
             outputTexture.enableRandomWrite = true;
             outputTexture.filterMode = FilterMode.Point;
             outputTexture.Create();
-
-            rawImage.GetComponent<RectTransform>().sizeDelta = size;
-            polygonCollider2D.SetPath(0, new[]
-            {
-                new Vector2(-size.x / 2, -size.y / 2),
-                new Vector2(-size.x / 2, size.y / 2),
-                new Vector2(size.x / 2, size.y / 2),
-                new Vector2(size.x / 2, -size.y / 2)
-            });
-            cinemachineConfiner.InvalidatePathCache();
-            orthographicSize = maxOrthographicSize = Mathf.Min(size.x, size.y) / 2.0f;
-            virtualCamera.m_Lens.OrthographicSize = orthographicSize;
 
             bufferTexture = new RenderTexture((int) size.x, (int) size.y, 24);
             bufferTexture.enableRandomWrite = true;
             bufferTexture.filterMode = FilterMode.Point;
             bufferTexture.Create();
 
+            rawImage.texture = outputTexture;
+            rawImage.GetComponent<RectTransform>().sizeDelta = size;
+
+            mouseCameraController.Initialize(size);
+            
             GenerateRandomWorldGPU(seed);
 
             gameOfLifeComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
@@ -85,31 +69,10 @@ namespace ZLevels.GameOfLife
             gameOfLifeComputeShader.SetTexture(0, "BufferTexture", bufferTexture);
         }
 
-        private void UpdateSim(Timer.TimesPerSecondTimer caller)
-        {
-            Dispatch();
-        }
-
-        private void GenerateRandomWorldGPU(int seed)
-        {
-            randomWorldComputeShader.SetFloat("Seed", seed);
-            randomWorldComputeShader.SetFloat("Threshold", threshold);
-            randomWorldComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
-            randomWorldComputeShader.SetTexture(0, "Result", outputTexture);
-            randomWorldComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
-        }
-
-        [ContextMenu("Dispatch")]
-        public void Dispatch()
-        {
-            gameOfLifeComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
-            Graphics.Blit(bufferTexture, outputTexture);
-        }
-
         private void Update()
         {
             perSecondTimer.TimesPerSecond = timesPerSecond;
-            
+
             if (simulate)
                 perSecondTimer.Tick();
 
@@ -131,25 +94,34 @@ namespace ZLevels.GameOfLife
 
             if (Input.GetMouseButtonDown(1))
             {
-                Vector3 worldMousePosition = camera.ScreenToWorldPoint(Input.mousePosition);
+                Vector3 worldMousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
                 Vector2 textureMousePosition = new Vector2(worldMousePosition.x, worldMousePosition.y) + size / 2.0f;
                 var x = (int) textureMousePosition.x;
                 var y = (int) textureMousePosition.y;
 
                 Graphics.CopyTexture(selectedPresetTexture.Texture, 0, 0, 0, 0, selectedPresetTexture.Texture.width,
                     selectedPresetTexture.Texture.height,
-                    outputTexture, 0, 0, x - selectedPresetTexture.Texture.width/2, y - selectedPresetTexture.Texture.height/2);
+                    outputTexture, 0, 0, x - selectedPresetTexture.Texture.width / 2,
+                    y - selectedPresetTexture.Texture.height / 2);
             }
+        }
 
-            if (Input.GetMouseButton(0))
-            {
-                Vector3 worldMousePosition = camera.ScreenToWorldPoint(Input.mousePosition);
-                cameraFollowTarget.position = new Vector3(worldMousePosition.x, worldMousePosition.y, 0);
-            }
+        private void UpdateSim(Timer.TimesPerSecondTimer caller) => ProcessGameOfLife();
 
-            orthographicSize = Mathf.Clamp(orthographicSize - Input.mouseScrollDelta.y * Time.deltaTime * zoomSpeed, 10,
-                maxOrthographicSize);
-            virtualCamera.m_Lens.OrthographicSize = orthographicSize;
+        private void GenerateRandomWorldGPU(int seed)
+        {
+            randomWorldComputeShader.SetFloat("Seed", seed);
+            randomWorldComputeShader.SetFloat("Threshold", threshold);
+            randomWorldComputeShader.SetFloats("Resolution", outputTexture.width, outputTexture.height);
+            randomWorldComputeShader.SetTexture(0, "Result", outputTexture);
+            randomWorldComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
+        }
+
+        [ContextMenu("ProcessGameOfLife")]
+        public void ProcessGameOfLife()
+        {
+            gameOfLifeComputeShader.Dispatch(0, outputTexture.width / 8, outputTexture.height / 8, 1);
+            Graphics.Blit(bufferTexture, outputTexture);
         }
 
         private void SetSelectedPatternTexture(GoLPatternTexture goLPatternTexture)
