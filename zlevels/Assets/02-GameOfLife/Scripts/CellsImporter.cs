@@ -1,6 +1,7 @@
-﻿using System.IO;
-using UnityEditor.AssetImporters;
+﻿#if UNITY_EDITOR
+using System.IO;
 using UnityEngine;
+using UnityEditor.AssetImporters;
 
 namespace ZLevels.GameOfLife
 {
@@ -15,3 +16,4 @@ namespace ZLevels.GameOfLife
         }
     }
 }
+#endif

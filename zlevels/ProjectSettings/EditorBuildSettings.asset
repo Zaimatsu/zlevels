@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01-Zoetropes/Scene/01-Zoetropes.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/02-GameOfLife/02-GameOfLife.unity
+    guid: 7c2cec68955e02d4f804e86f44428dec
   m_configObjects: {}
