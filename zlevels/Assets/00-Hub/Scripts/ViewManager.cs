@@ -1,6 +1,7 @@
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace ZLevels.Hub
 {
@@ -13,6 +14,7 @@ namespace ZLevels.Hub
         [SerializeField] private SceneListElement sceneListElementPrefab;
         [SerializeField] private Transform sceneListElementsParent;
         [SerializeField] private SceneInfo sceneInfo;
+        [SerializeField] private Button exitButton;
 
         private void Start()
         {
@@ -26,6 +28,13 @@ namespace ZLevels.Hub
             SceneListElement.Clicked += SceneListElementOnClicked;
             sceneInfo.RunButtonClicked += SceneInfoOnRunButtonClicked;
             Loaded?.Invoke(this);
+
+#if UNITY_WEBGL
+            exitButton.gameObject.SetActive(false);
+#else
+            exitButton.gameObject.SetActive(true);
+            exitButton.onClick.AddListener(Application.Quit);
+#endif
         }
 
         private void OnDestroy()
