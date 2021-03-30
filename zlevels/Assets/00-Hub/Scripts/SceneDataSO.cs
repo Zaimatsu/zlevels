@@ -9,5 +9,6 @@ namespace ZLevels.Hub
         [field: SerializeField, TextArea] public string Description { get; private set; }
         [field: SerializeField] public SceneReference Scene { get; private set; }
         [field: SerializeField] public Sprite Screenshot { get; private set; }
+        [field: SerializeField] public bool isUsingComputeShaders { get; private set; }
     }
 }

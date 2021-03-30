@@ -15,6 +15,9 @@ namespace ZLevels.Hub
         [SerializeField] private Button runButton;
         [SerializeField] private Camera mainCamera;
 
+        [SerializeField] private string unsupportedComputeShadersMessage =
+            "<color=#ff0000><b>Info: Your environment doesn't support compute shaders. Maybe try running standalone version?</b></color>";
+
         private SceneDataSO selectedSceneToRun;
 
         private void Start()
@@ -38,7 +41,17 @@ namespace ZLevels.Hub
             descriptionText.text = sceneData.Description;
             screenshotImage.sprite = sceneData.Screenshot;
             selectedSceneToRun = sceneData;
-            runButton.interactable = true;
+
+            if (sceneData.isUsingComputeShaders && SystemInfo.supportsComputeShaders)
+                runButton.interactable = true;
+            else if (sceneData.isUsingComputeShaders && !SystemInfo.supportsComputeShaders)
+            {
+                descriptionText.text =
+                    $"{unsupportedComputeShadersMessage}\n\n{descriptionText.text}";
+                runButton.interactable = false;
+            }
+            else if (!sceneData.isUsingComputeShaders)
+                runButton.interactable = true;
         }
 
         public void OnPointerClick(PointerEventData eventData)
