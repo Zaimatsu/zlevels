@@ -28,6 +28,12 @@ namespace ZLevels.Hub
             Loaded?.Invoke(this);
         }
 
+        private void OnDestroy()
+        {
+            SceneListElement.Clicked -= SceneListElementOnClicked;
+            sceneInfo.RunButtonClicked -= SceneInfoOnRunButtonClicked;
+        }
+
         private void SceneInfoOnRunButtonClicked(SceneInfo caller, SceneDataSO sceneData)
         {
             SceneManager.LoadScene(sceneData.Scene);
